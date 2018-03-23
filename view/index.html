@@ -47,7 +47,7 @@
 
 
         <div class="demo-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
-                <header style="position:absolute;float:left" class="demo-header mdl-layout__header mdl-color--grey-100 mdl-color-text--grey-600">
+                <header id="header" style="position:absolute;float:left" class="demo-header mdl-layout__header mdl-color--grey-100 mdl-color-text--grey-600">
                   <div class="mdl-layout__header-row">
                     <span class="mdl-layout-title">Home</span>
                     <div class="mdl-layout-spacer"></div>
@@ -70,20 +70,20 @@
                     </ul>
                   </div>
                 </header>
-                <div class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
+                <div id="drawer" class="demo-drawer mdl-layout__drawer mdl-color--blue-grey-900 mdl-color-text--blue-grey-50">
                   <header class="demo-drawer-header">
-                    <img src="images/user.jpg" class="demo-avatar">
+                    <img id="avatar"src="static/images/ic_account_circle_white_24dp_2x.png" class="demo-avatar">
                     <div class="demo-avatar-dropdown">
-                      <span>hello@example.com</span>
+                      <span id="avatarText"></span>
                       <div class="mdl-layout-spacer"></div>
                       <button id="accbtn" class="mdl-button mdl-js-button mdl-js-ripple-effect mdl-button--icon">
                         <i class="material-icons" role="presentation">arrow_drop_down</i>
                         <span class="visuallyhidden">Accounts</span>
                       </button>
                       <ul class="mdl-menu mdl-menu--bottom-right mdl-js-menu mdl-js-ripple-effect" for="accbtn">
-                        <li class="mdl-menu__item">hello@example.com</li>
-                        <li class="mdl-menu__item">info@example.com</li>
-                        <li class="mdl-menu__item"><i class="material-icons">add</i>Add another account...</li>
+                        <li class="mdl-menu__item"><i class="material-icons">settings</i> &nbsp Setting</li>
+        
+                        <li id="signoutBtn"class="mdl-menu__item"><i class="material-icons">input</i> &nbsp Sign out</li>
                       </ul>
                     </div>
                   </header>
@@ -101,7 +101,7 @@
                     <a class="mdl-navigation__link" href=""><i class="mdl-color-text--blue-grey-400 material-icons" role="presentation">help_outline</i><span class="visuallyhidden">Help</span></a>
                   </nav>
                 </div>
-                <main class="mdl-layout__content mdl-color--grey-100">
+                <main id="content" class="mdl-layout__content mdl-color--grey-100">
 
                        
 
@@ -110,7 +110,7 @@
                                 margin-top: 30%;
                                 zoom: 6;
                                 position: absolute;" >
-                                    <div id="spin" class="mdl-spinner mdl-js-spinner is-active"style="display:none"></div>
+                                    <div id="spin" class="mdl-spinner mdl-js-spinner is-active"style=""></div>
                                      
                                 </div>
                         </div>
@@ -125,6 +125,12 @@
 
 </body>
 <script>
+
+var signout = document.getElementById("signoutBtn");
+signout.addEventListener('click',function(){
+    firebase.auth().signOut();
+});
+    
 // Note: This example requires that you consent to location sharing when
       // prompted by your browser. If you see the error "The Geolocation service
       // failed.", it means you probably did not give permission for the browser to
@@ -271,11 +277,18 @@
               lat: position.coords.latitude,
               lng: position.coords.longitude
             };
-            
-            infoWindow.setPosition(pos);
-            infoWindow.setContent('Location found.');
-            infoWindow.open(map);
-            map.setCenter(pos);
+
+
+            //hide Loader 
+            if(firebase.auth().currentUser){
+                document.getElementById('loader').style = "display:none" ;
+                infoWindow.setPosition(pos);
+                infoWindow.setContent('Location found.');
+                infoWindow.open(map);
+                map.setCenter(pos);
+            }else{
+                document.getElementById('spin').style="display:none"
+            }
             
           }, function() {
             handleLocationError(true, infoWindow, map.getCenter());
@@ -324,19 +337,19 @@
     // Initialize the FirebaseUI Widget using Firebase.
     var ui = new firebaseui.auth.AuthUI(firebase.auth());
     // The start method will wait until the DOM is loaded.
-
+ 
     firebase.auth().onAuthStateChanged(function(user) {
-        if (!user) { ui.start('#firebaseui-auth-container', uiConfig);}
+        if (!user) { 
+            ui.start('#firebaseui-auth-container', uiConfig);
+            document.getElementById('header').style="display: none;";
+            document.getElementById('drawer').style="display: none;";
+            document.getElementById('content').style="margin:0px";
+            
+            
+        }
         else{
-            // logged
+            document.getElementById('avatarText').innerHTML= user.displayName + " : "+  user.email;
             
-            // hide Loader 
-            document.getElementById('loader').style = "display:none" ;
-            
-       
-
-
-
         }
     });
  
