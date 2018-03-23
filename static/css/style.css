@@ -25,6 +25,10 @@
   .demo-layout .mdl-layout__header .mdl-layout__drawer-button {
     color: rgba(0, 0, 0, 0.54);
   }
+    
+  
+
+  
   .mdl-layout__drawer .avatar {
     margin-bottom: 16px;
   }
@@ -178,4 +182,38 @@
 
   /* HOME */
 
-  
+.mdl-layout__drawer-button .material-icons {
+    margin-top: 11px;
+}
+@media screen and (min-width: 1025px)
+{
+    .mdl-layout__drawer-button {
+        display: none;
+    }
+}
+
+.layout__loader{
+    background-color: rgba(0,0,0,.7);
+    visibility: visible;
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    z-index: 4;
+ 
+    transition-property: background-color;
+    transition-duration: .2s;
+    transition-timing-function: cubic-bezier(.4,0,.2,1);
+}
+
+
+/* OAUTH modal */
+
+#firebaseui-auth-container{
+    position: absolute;
+    margin: auto;
+    z-index: 10;
+    margin-left: 45%;
+    margin-top: 9em;
+}
