@@ -3,10 +3,12 @@
 <head>
     <link rel="stylesheet" href="/node_modules/material-design-lite/material.min.css">
     <script src="/node_modules/material-design-lite/material.min.js"></script>
+    <script src="/node_modules/jquery/dist/jquery.min.js"></script>
     <link rel="stylesheet" href="/static/css/material.min.css" />
     <link rel="stylesheet" href="/static/css/style.css" />
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
-    
+    <script src="static/js/config.js"></script>
+    <script src="/static/js/rx.js"></script>
     <script src="https://cdn.firebase.com/libs/firebaseui/2.6.3/firebaseui.js"></script>
   <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/2.6.3/firebaseui.css" />
   <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
@@ -42,9 +44,18 @@
 
 <!--  OAuth modal -->
 <div id="firebaseui-auth-container"></div>
+<!--  Dialog modal -->
+<dialog class="mdl-dialog">
+  <div class="mdl-dialog__content">
+    <p >
+      Please enable Location useage and Refresh the website
+    </p>
+  </div>
+  <div class="mdl-dialog__actions mdl-dialog__actions--full-width">
+    <button style="color:rgb(233,30,99);" type="button" class="mdl-button close" >Refresh</button>
+  </div>
+</dialog>
 <!--  OAuth modal -->
-
-
 
         <div class="demo-layout mdl-layout mdl-js-layout mdl-layout--fixed-drawer mdl-layout--fixed-header">
                 <header id="header" style="position:absolute;float:left" class="demo-header mdl-layout__header mdl-color--grey-100 mdl-color-text--grey-600">
@@ -126,8 +137,8 @@
 </body>
 <script>
 
-var signout = document.getElementById("signoutBtn");
-signout.addEventListener('click',function(){
+var signout = $("#signoutBtn");
+signout.bind('click',function(){
     firebase.auth().signOut();
 });
     
@@ -300,6 +311,16 @@ signout.addEventListener('click',function(){
       }
 
       function handleLocationError(browserHasGeolocation, infoWindow, pos) {
+
+
+        // Fail 
+        
+        dialog.showModal();
+
+
+
+
+
         infoWindow.setPosition(pos);
         infoWindow.setContent(browserHasGeolocation ?
                               'Error: The Geolocation service failed.' :
@@ -340,19 +361,45 @@ signout.addEventListener('click',function(){
  
     firebase.auth().onAuthStateChanged(function(user) {
         if (!user) { 
+
+          // login, register modal
             ui.start('#firebaseui-auth-container', uiConfig);
-            document.getElementById('header').style="display: none;";
-            document.getElementById('drawer').style="display: none;";
-            document.getElementById('content').style="margin:0px";
-            
+            $('#header').style="display: none;";
+            $('#drawer').style="display: none;";
+            $('#content').style="margin:0px";
+  
             
         }
         else{
-            document.getElementById('avatarText').innerHTML= user.displayName + " : "+  user.email;
-            
+          $('#avatarText').innerHTML= user.displayName + " : "+  user.email;
+ 
         }
     });
+    
+
+
+
+
+    // modal 
+
+     var dialog = document.querySelector('dialog');
+     
+    if (! dialog.showModal) {
+      dialogPolyfill.registerDialog(dialog);
+    }
+   
+    dialog.querySelector('.close').addEventListener('click', function() {
+    
+    });
  
+    var Refresh  = Rx.Observable
+              .fromEvent(dialog.querySelector('.close'), 'click');
+
+    Refresh.subscribe(e => {
+      window.location.href = "/";
+      dialog.close();
+    });
+           
   </script>
 <script async defer
 src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARzsympbsauRvmUSZIuuDnCtE3G_vI1Z8&callback=initMap">
