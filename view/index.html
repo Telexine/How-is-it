@@ -358,27 +358,84 @@ signout.bind('click',function(){
     // Initialize the FirebaseUI Widget using Firebase.
     var ui = new firebaseui.auth.AuthUI(firebase.auth());
     // The start method will wait until the DOM is loaded.
- 
+    
+
+
+    // global var
+    let _Username ,lat ,lng ;
+    let t_lat,t_lng; //temp
+
     firebase.auth().onAuthStateChanged(function(user) {
         if (!user) { 
 
-          // login, register modal
+          // not login , show login, register modal
             ui.start('#firebaseui-auth-container', uiConfig);
-            $('#header').style="display: none;";
-            $('#drawer').style="display: none;";
-            $('#content').style="margin:0px";
+            $('#header').css("display", "none");
+            $('#drawer').css("display", "none");
+            $('#content').css("margin","0px");
   
             
         }
         else{
-          $('#avatarText').innerHTML= user.displayName + " : "+  user.email;
- 
-        }
+            //This account is Loggged, tell state to firebase
+            $('#avatarText').text(user.displayName + " : "+  user.email);
+             // set ref() path to user status of user 
+            var amOnline = firebase.database().ref(".info/connected");
+            var userRef = firebase.database().ref("presence/" + user.displayName+"/state");
+
+
+            //listener on user connect,disconnect
+            amOnline.on('value', function(snapshot) {
+              if (snapshot.val()) {
+                //on quit  set to offline
+                userRef.onDisconnect().set("Offline");
+                //on normal (connected) set to Online
+                 userRef.set("Online");
+                         // set ref() path to lattiude , longtitide 
+                         let _Username = user.displayName;
+              lat = firebase.database().ref("presence/" + _Username+"/lat/");  
+              lng = firebase.database().ref("presence/" + _Username+"/lng/");
+
+                //update current position on firebase
+                  getPreciseLocation().then(function(result){
+                     lat.set( t_lat = result[0]);
+                     lng.set(t_lng = result[1]);
+                  });
+                
+              }
+            });
+              }
     });
-    
+     
 
 
 
+
+  sub = Rx.Observable.interval(1000)
+
+    .subscribe((val) => { 
+      getPreciseLocation().then(function(result){
+   
+      let c_lat = result[0],c_lng= result[1]; // current 
+    /*
+      100000 ,5 decimal ~ 1.1 meter
+      10000 ,4 decimal ~ 11 meter    *tested and recommend 
+      1000  ,3 decimal ~ 110 meter
+      100   ,2 decimal ~ 1.1 km
+      10    ,1 decimal ~ 11.1 km
+     */
+      const Precision = 10000; 
+
+          //true, will update depend on  Precision
+          if(((Math.abs(t_lat-c_lat)*Precision)>1)||(Math.abs(t_lng-c_lng)*Precision)>1){
+            //console.log("lat diff " +(Math.abs(t_lat-c_lat)*Precision));
+            //console.log("lon diff " +(Math.abs(t_lng-c_lng)*Precision));
+            lat.set((   t_lat = c_lat)); 
+            lng.set((t_lng = c_lng)); 
+            //console.log(c_lat+" "+ c_lng)
+          }
+        ;}
+      )});
 
     // modal 
 
@@ -400,6 +457,19 @@ signout.bind('click',function(){
       dialog.close();
     });
            
+
+function getPreciseLocation() {
+  return new Promise(function (resolve, reject) {
+    navigator.geolocation.getCurrentPosition(function (position) {
+      resolve([position.coords.latitude, position.coords.longitude]);
+    });
+  });
+}
+
+
+
+
+
   </script>
 <script async defer
 src="https://maps.googleapis.com/maps/api/js?key=AIzaSyARzsympbsauRvmUSZIuuDnCtE3G_vI1Z8&callback=initMap">
