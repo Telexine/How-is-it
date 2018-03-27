@@ -9,9 +9,9 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/icon?family=Material+Icons">
     <script src="static/js/config.js"></script>
     <script src="/static/js/rx.js"></script>
-    <script src="https://cdn.firebase.com/libs/firebaseui/2.6.3/firebaseui.js"></script>
-  <link type="text/css" rel="stylesheet" href="https://cdn.firebase.com/libs/firebaseui/2.6.3/firebaseui.css" />
-  <script src="https://www.gstatic.com/firebasejs/4.12.0/firebase.js"></script>
+    <script src="/node_modules/firebaseui/dist/firebaseui.js"></script>
+  <link type="text/css" rel="stylesheet" href="/node_modules/firebaseui/dist/firebaseui.css" />
+  <script src="/node_modules/firebase/firebase.js"></script>
 <script>
   // Initialize Firebase
   var config = {
@@ -300,12 +300,23 @@ signout.bind('click',function(){
             //hide Loader 
             if(firebase.auth().currentUser){
               document.getElementById('loader').style = "display:none" ;
+
+              //var myIcon = '/static/images/ic_gps_fixed_black_48dp_2x.png';
+              var myMarker = new google.maps.Marker({
+                  position: pos,
+                  title:"me",
+                  icon: image
+              });
+                myMarker.setPosition(pos);
+              /*
                 infoWindow.setPosition(pos);
                 infoWindow.setContent('Location found.');
                 infoWindow.open(map);
+                */
                 map.setCenter(pos);
             }else{
                 document.getElementById('spin').style="display:none"
+                dialog.showModal();
             }
             
           }, function() {
@@ -337,41 +348,92 @@ signout.bind('click',function(){
   coordref.on('child_changed', function(childSnapshot) {
     //omitt current user position 
     if( _Username != childSnapshot.key){
-      console.log(" data "+ childSnapshot.key+ " " + childSnapshot.val().lng );
-      pin_user( childSnapshot.key,[childSnapshot.val().lat,childSnapshot.val().lng]);
+     
 
+    // update pin
+     if(_usrPin.indexOf(childSnapshot.key)!=-1){    
+      move_pin(childSnapshot.key,[childSnapshot.val().lat,childSnapshot.val().lng]);
+      }else{
+        //console.log(" data "+ childSnapshot.key+ " " + childSnapshot.val().lng );
+        pin_user( childSnapshot.key,[childSnapshot.val().lat,childSnapshot.val().lng]);
 
+      }
     }
    
   });
 
+  function removeByIndex(array, index){
+    return array.filter(function(elem, _index){
+        return index != _index;
+    });
+}
+
+    let move_pin = function(name,coord){
+      for(let i = 0; i<_usrPin.length;i++){
+        if(_usrPin[i]=name){
+          //console.log(coord);
+          myLatlng = new google.maps.LatLng(coord[0],coord[1]);
+          gmarker[i].setPosition(myLatlng);
+ 
+        }
+        
+      }
+
+    }
+    
+
+    let remove_pin = function(name){ // not tested yet 
+      for(let i = 0; i<_usrPin.length;i++){
+        if(_usrPin[i]=name){
+          removeByIndex(_usrPin, i);
+          gmarker[i].setMap(null);
+          removeByIndex(gmarker, i); 
+        }
+        
+      }
+      
+    }
 
 
     let pin_user = function(name,coord){
 
       var contentString = '<div id="pn'+name+'">'+
-      '<div id="pic">'+
+      '<div id="pic" style="background:url(\'static/images/ic_account_circle_black_24dp_2x.png\'); width: 48px;'+
+      'height: 48px;float:left;'+
+      'border-radius: 24px;" >'+
       '</div>'+
-      '<h1 id="firstHeading" class="firstHeading">'+name+'</h1>'+
+      '<h6 id="firstHeading" class="firstHeading">'+name+'</h6>'+
       '</div>'+
       '</div>';
 
-  var infowindow = new google.maps.InfoWindow({
-    content: contentString
-  });
- 
-  var marker = new google.maps.Marker({
-    map: map,
-    title: 'name'
-  });
-  var pos = {
-              lat: coord[0],
-              lng: coord[1]
-            };
-  marker.setPosition(pos);
-  marker.addListener('click', function() {
-    infowindow.open(map, marker);
-  });
+        var infowindow = new google.maps.InfoWindow({
+          content: contentString
+       
+        });
+      
+        var marker = new google.maps.Marker({
+          map: map,
+          title: name,
+          animation: google.maps.Animation.DROP,
+        });
+        _usrPin.push(name);
+        gmarker.push(marker);
+        var pos = {
+                    lat: coord[0],
+                    lng: coord[1]
+                  };
+        marker.setPosition(pos);
+        infowindow.open(map, marker);
+        marker.addListener('hover', function() {
+            $('#pn'+name).css(zoom,1.2);
+        });
+        marker.addListener('click', function() {
+            infowindow.open(map, marker);
+        });
+        marker.addListener('dblclick', function() {
+          map.setZoom(15 );
+          map.setCenter(marker.getPosition());
+        });
     }
 
   // Listen online state 
@@ -422,9 +484,12 @@ signout.bind('click',function(){
     // The start method will wait until the DOM is loaded.
     
 
-
+    ////////////////
     // global var
+    ///////////////
     let _Username ,lat ,lng ;
+    let _usrPin= [],gmarker = [];
+    
     let t_lat,t_lng; //temp
 
     firebase.auth().onAuthStateChanged(function(user) {
@@ -475,9 +540,8 @@ signout.bind('click',function(){
 
   sub = Rx.Observable.interval(1000)
     .subscribe((val) => { 
-      getPreciseLocation().then(function(result){
-   
-      let c_lat = result[0],c_lng= result[1]; // current 
+        getPreciseLocation().then(function(result){
+        let c_lat = result[0],c_lng= result[1]; // current 
     /*
       100000 ,5 decimal ~ 1.1 meter
       10000 ,4 decimal ~ 11 meter    *tested and recommend 
@@ -491,7 +555,7 @@ signout.bind('click',function(){
           if(((Math.abs(t_lat-c_lat)*Precision)>1)||(Math.abs(t_lng-c_lng)*Precision)>1){
             //console.log("lat diff " +(Math.abs(t_lat-c_lat)*Precision));
             //console.log("lon diff " +(Math.abs(t_lng-c_lng)*Precision));
-            lat.set((   t_lat = c_lat)); 
+            lat.set((t_lat = c_lat)); 
             lng.set((t_lng = c_lng)); 
             //console.log(c_lat+" "+ c_lng)
           }
